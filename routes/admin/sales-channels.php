@@ -3,6 +3,7 @@
 use App\Enums\SalesChannels\IntegrationCapability;
 use App\Http\Controllers\Admin\SalesChannels\ChannelAccountController;
 use App\Http\Controllers\Admin\SalesChannels\ChannelAccountOperationsController;
+use App\Http\Controllers\Admin\SalesChannels\ChannelAttentionController;
 use App\Http\Controllers\Admin\SalesChannels\ChannelHubController;
 use App\Http\Controllers\Admin\SalesChannels\ChannelInventoryController;
 use App\Http\Controllers\Admin\SalesChannels\ChannelListingController;
@@ -27,6 +28,14 @@ Route::group([
     'middleware' => ['admin', 'actch:admin_panel', 'module:sales_channels', EnsureSalesChannelsMigrated::class],
 ], function () {
     Route::get('/', [ChannelHubController::class, 'index'])->name('index');
+
+    // ---- what waits for a person ----------------------------------------------------------------------------------
+    // Reading is a GET; the two things a person may do are POSTs, so no link on another site can take them. Neither sends
+    // anything to a channel: `AttentionActions` records a human judgement, or puts back work that is idempotent by
+    // construction, and refuses everything else.
+    Route::get('attention', [ChannelAttentionController::class, 'index'])->name('attention');
+    Route::post('attention/{source}/{id}/{action}', [ChannelAttentionController::class, 'act'])
+        ->whereNumber('id')->whereIn('action', ChannelAttentionController::ACTIONS)->name('attention.act');
 
     // ---- accounts -------------------------------------------------------------------------------------------------
     Route::get('accounts/create', [ChannelAccountController::class, 'create'])->name('accounts.create');

@@ -11,10 +11,17 @@ use Illuminate\Support\Facades\DB;
  */
 trait BuildsSalesChannelSchema
 {
+    use AssertsNoCredentialWasLogged;
     use BuildsFulfillmentSchema;
 
     protected function buildSalesChannelSchema(): void
     {
+        // **Every suite built on this trait is guarded against logging a credential.** The Odoo API key reached
+        // `sales_channel_api_logs` on every read and every write and nothing noticed, because a leak is a property of what a
+        // particular connector puts where -- only a real call shows it. These suites already make hundreds of real calls
+        // against faked endpoints with real secrets in the store, so the verdict is read off the calls they already make.
+        $this->guardAgainstLoggedCredentials();
+
         $this->buildCoreSchema();
         $this->runFulfillmentMigrations();
         $this->runSalesChannelMigrations();
@@ -51,6 +58,7 @@ trait BuildsSalesChannelSchema
             '2026_11_17_100000_create_amazon_report_runs_table.php',
             '2026_11_17_200000_create_channel_return_decisions_table.php',
             '2026_11_18_100000_create_channel_package_splits_table.php',
+            '2026_11_20_100000_create_channel_attention_reviews_table.php',
         ] as $file) {
             (require database_path('migrations/' . $file))->up();
         }

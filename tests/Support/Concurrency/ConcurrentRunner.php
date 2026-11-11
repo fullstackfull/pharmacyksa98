@@ -24,7 +24,10 @@ final class ConcurrentRunner
     }
 
     /**
-     * @param list<array<string, mixed>> $arguments one entry per process (its own arguments for the operation)
+     * @param list<array<string, mixed>> $arguments one entry per process (its own arguments for the operation). An entry may
+     *                                              carry its own `op` to run a DIFFERENT operation in that process, which is
+     *                                              how two different actions on one row are raced against each other
+     *                                              rather than merely run one after the other.
      * @return list<array{ok: bool, result?: mixed, error?: string, message?: string, started_at: float, finished_at: float, pid: int}>
      */
     public static function run(string $operation, array $arguments): array
@@ -32,7 +35,9 @@ final class ConcurrentRunner
         $startAt = microtime(true) + self::BOOT_SECONDS;
         $processes = [];
         foreach ($arguments as $index => $args) {
-            $spec = json_encode(['op' => $operation, 'args' => $args, 'start_at' => $startAt, 'index' => $index], JSON_THROW_ON_ERROR);
+            $own = (string) ($args['op'] ?? $operation);
+            unset($args['op']);
+            $spec = json_encode(['op' => $own, 'args' => $args, 'start_at' => $startAt, 'index' => $index], JSON_THROW_ON_ERROR);
             $command = [PHP_BINARY];
             $prepend = (string) ini_get('auto_prepend_file');
             if ($prepend !== '') {

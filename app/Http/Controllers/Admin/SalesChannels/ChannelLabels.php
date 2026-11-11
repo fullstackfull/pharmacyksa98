@@ -52,6 +52,28 @@ final class ChannelLabels
         // What a mapping row maps: one of our cost components, or the account that balances it.
         'odoo_fact_kind_' => ['cost_component', 'counterpart'],
 
+        /*
+        | What waits for a person. Three families, because the screen has to name three different things: WHERE a row is
+        | waiting, WHICH part of the business it belongs to, and WHAT state it is in -- and the states come from nine tables
+        | that were built separately and do not share a vocabulary.
+        */
+        'attention_source_' => [
+            'return_decisions', 'package_splits', 'shipment_sends', 'dispatches', 'stock_events',
+            'odoo_postings', 'amazon_reports', 'payment_mismatches', 'refunds', 'order_links',
+        ],
+        'attention_domain_' => ['returns', 'shipments', 'stock', 'accounting', 'finance', 'payments', 'orders'],
+        // What a person SAW at the channel. A fixed vocabulary, never free text: a word nobody can group is not a record.
+        'attention_outcome_' => ['confirmed_at_channel', 'not_done_at_channel', 'still_unknown', 'no_longer_relevant'],
+        'attention_state_' => [
+            'may_have_sent', 'needs_review', 'may_have_posted', 'dead', 'blocked', 'failed', 'unknown', 'mismatch', 'rejected',
+        ],
+        // Why a row cannot simply be sent again -- a fact about the integration, which is why it is a code and not a sentence
+        // in the view. Eight of the nine sources have one.
+        'attention_why_' => [
+            'return_decisions', 'package_splits', 'shipment_sends', 'dispatches',
+            'odoo_postings', 'amazon_reports', 'payment_mismatches', 'refunds', 'order_links',
+        ],
+
         'sync_resource_' => ['orders', 'returns', 'listings', 'inventory', 'finances', 'publish_stock', 'publish_price'],
         'run_stat_' => [
             'pages', 'created', 'updated', 'unchanged', 'stale', 'needs_review', 'skipped', 'decisions', 'linked', 'suggested', 'conflicts', 'unseen', 'stored', 'unlinked',
@@ -125,6 +147,21 @@ final class ChannelLabels
         'odoo_posting_state_needs_review', 'odoo_posting_state_dead',
         'odoo_transport_json2', 'odoo_transport_xmlrpc', 'odoo_transport_unknown',
         'odoo_fact_kind_cost_component', 'odoo_fact_kind_counterpart',
+        // What waits for a person: where it is waiting, which area it belongs to, what state it is in, and why it is
+        // never simply sent again.
+        'attention_source_return_decisions', 'attention_source_package_splits', 'attention_source_shipment_sends', 'attention_source_dispatches',
+        'attention_source_stock_events', 'attention_source_odoo_postings', 'attention_source_amazon_reports', 'attention_source_payment_mismatches',
+        'attention_source_refunds', 'attention_source_order_links',
+        'attention_outcome_confirmed_at_channel', 'attention_outcome_not_done_at_channel', 'attention_outcome_still_unknown',
+        'attention_outcome_no_longer_relevant',
+        'attention_domain_returns', 'attention_domain_shipments', 'attention_domain_stock', 'attention_domain_accounting',
+        'attention_domain_finance', 'attention_domain_payments', 'attention_domain_orders',
+        'attention_state_may_have_sent', 'attention_state_needs_review', 'attention_state_may_have_posted', 'attention_state_dead',
+        'attention_state_blocked', 'attention_state_failed', 'attention_state_unknown', 'attention_state_mismatch',
+        'attention_state_rejected',
+        'attention_why_return_decisions', 'attention_why_package_splits', 'attention_why_shipment_sends', 'attention_why_dispatches',
+        'attention_why_odoo_postings', 'attention_why_amazon_reports', 'attention_why_payment_mismatches', 'attention_why_refunds',
+        'attention_why_order_links',
         'sync_resource_orders', 'sync_resource_returns', 'sync_resource_listings', 'sync_resource_inventory', 'sync_resource_finances', 'sync_resource_publish_stock', 'sync_resource_publish_price',
         'run_stat_pages', 'run_stat_created', 'run_stat_updated', 'run_stat_unchanged', 'run_stat_stale', 'run_stat_needs_review', 'run_stat_skipped', 'run_stat_decisions',
         'run_stat_linked', 'run_stat_suggested', 'run_stat_conflicts', 'run_stat_unseen', 'run_stat_stored', 'run_stat_unlinked', 'run_stat_new', 'run_stat_duplicates',

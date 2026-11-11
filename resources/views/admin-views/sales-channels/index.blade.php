@@ -11,6 +11,10 @@
                 <a class="btn btn-outline-secondary btn-sm" href="{{ route('admin.sales-channels.inventory.index') }}">{{ translate('Stock_by_Location') }}</a>
                 <a class="btn btn-outline-secondary btn-sm" href="{{ route('admin.sales-channels.orders.index') }}">{{ translate('Unified_Orders') }}</a>
                 <a class="btn btn-outline-secondary btn-sm" href="{{ route('admin.sales-channels.routing.index') }}">{{ translate('Dynamic_Routing') }}</a>
+                {{-- What waits for a person, carrying its own count: a page nobody can find is the hole the collector closes. --}}
+                <a class="btn btn-outline-warning btn-sm" href="{{ route('admin.sales-channels.attention') }}">
+                    {{ translate('Needs_A_Person') }}@if (($attentionWaiting ?? 0) > 0) <span class="badge bg-danger">{{ $attentionWaiting }}</span>@endif
+                </a>
                 <a class="btn btn-outline-secondary btn-sm" href="{{ route('admin.sales-channels.logs.index') }}">{{ translate('Channel_API_Logs') }}</a>
             </x-slot:actions>
         </x-k.page-header>

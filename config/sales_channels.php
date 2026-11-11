@@ -67,6 +67,15 @@ return [
         'max_checks' => 8,
     ],
 
+    // What waits for a person, gathered from nine tables into one screen (`AttentionCollector`). It reads and sends
+    // NOTHING: every state it shows is one a pipeline reached because the outcome was not knowable, and the value of those
+    // states is that no machine touches them again. So there is one number here and it is only about how the screen looks.
+    'attention' => [
+        // After this long with nobody looking, a row is shown as late. A fenced refund is not an emergency in its first hour
+        // and is one after a day.
+        'late_after_hours' => 24,
+    ],
+
     'logs' => [
         // `channels:prune` (daily) deletes call logs older than this and clears the stored text of old webhook deliveries.
         'retention_days' => 60,

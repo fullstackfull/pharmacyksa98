@@ -342,6 +342,9 @@ class StockConcurrencyTest extends TestCase
 
         $this->assertAllWorkersSucceeded($reports);
         $claimed = array_sum(array_column(array_column($reports, 'result'), 'claimed'));
+        // Exactly 24, over however many passes the six of them needed. More than 24 would mean an event was worked twice;
+        // fewer would mean one was left behind. Both are the real guarantees, and neither depends on how the passes
+        // interleaved -- which is what made this assertion flaky when each worker made a single pass.
         $this->assertSame(24, $claimed, 'the workers between them took every event exactly once: ' . json_encode(array_column($reports, 'result')));
         $this->assertSame(0, ChannelStockEvent::where('state', ChannelStockEvent::PENDING)->count(), 'an event was left waiting');
         $this->assertSame(24, ChannelStockEvent::where('state', ChannelStockEvent::WORKED)->count());

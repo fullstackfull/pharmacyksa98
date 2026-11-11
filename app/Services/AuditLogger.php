@@ -14,9 +14,14 @@ use Illuminate\Support\Facades\Schema;
  * whichever guard is authenticated, captures their name so a later deletion does not erase the
  * trail, and stamps the request's IP — none of which a caller should have to remember.
  *
- * It never throws into the caller. An audit write failing must not fail the action being audited:
+ * `record()` never throws into the caller. An audit write failing must not fail the action being audited:
  * the worst outcome of a logging problem is a missing line, which is far better than a settlement or
  * a payout rolled back because the note about it could not be saved.
+ *
+ * **`recordOrFail()` is for the opposite case, and it exists because of a real one.** Some actions ARE the record: a person
+ * settling an ambiguous refund by hand has produced nothing else -- no request, no reply, no channel state change -- so an
+ * action reported as done whose only trace silently failed to save is a lie told to whoever reads the trail next. Such a
+ * caller asks for the line and is told if it could not be written.
  */
 class AuditLogger
 {
@@ -58,6 +63,37 @@ class AuditLogger
             // A missing audit line is never worth failing the audited action.
             return null;
         }
+    }
+
+    /**
+     * Record an action, and **throw if the line cannot be written**.
+     *
+     * For an action whose only durable trace IS the audit line. `record()` swallows a failure because a missing note is
+     * better than a rolled-back payout; here the reverse holds: there is nothing to roll back and nothing else to show, so a
+     * silent failure would leave somebody's hand-made decision about a customer's money with no author and no date.
+     *
+     * A host whose `audit_logs` table has not been migrated is told so by name rather than passing silently.
+     *
+     * @param array{type: string, id: int|string}|object|null $subject
+     * @throws \RuntimeException when the line could not be stored
+     */
+    public function recordOrFail(
+        string $action,
+        array|object|null $subject = null,
+        ?array $before = null,
+        ?array $after = null,
+        ?array $context = null,
+    ): AuditLog {
+        if (!Schema::hasTable('audit_logs')) {
+            throw new \RuntimeException('audit_logs has not been migrated, so this decision cannot be recorded: ' . $action);
+        }
+
+        $line = $this->record($action, $subject, $before, $after, $context);
+        if ($line === null) {
+            throw new \RuntimeException('The audit line for this decision could not be written: ' . $action);
+        }
+
+        return $line;
     }
 
     /**

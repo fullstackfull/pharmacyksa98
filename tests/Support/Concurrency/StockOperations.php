@@ -43,16 +43,38 @@ final class StockOperations
     }
 
     /**
-     * Works the outbox the way a queue worker does, and says what the pass came to. Several at once must not double-work an event, and must not leave one behind.
+     * Works the outbox the way a queue worker really does: **until a pass takes nothing**, not once.
      *
-     * @param array{limit?: int} $args
+     * It used to be a single pass, and that made the test above flaky for a reason worth writing down. Six workers each
+     * claiming "up to ten of the oldest pending events" can all select the SAME ten; the claim is a compare-and-set so only
+     * one wins each row, and the five losers end that single pass with almost nothing. Nobody looks again, and events are
+     * left waiting -- so the assertion "between them they took every event" was really asserting that the six windows
+     * happened not to overlap, which on a loaded runner they do. The observed failure was 20 of 24.
+     *
+     * Draining to empty is also what the real worker does: `channels:stock-events --passes` loops while a pass still claims
+     * something. So this now tests the guarantee the code actually gives -- no event worked twice, and none left behind --
+     * instead of the scheduling luck of one pass.
+     *
+     * @param array{limit?: int, passes?: int} $args
      */
     public static function drainStockEvents(array $args): array
     {
         StockEventOutbox::$runId = '';
-        $worked = app(StockEventDrain::class)->drain((int) ($args['limit'] ?? 50));
+        $limit = (int) ($args['limit'] ?? 50);
+        $totals = ['claimed' => 0, 'pools' => 0, 'failed' => 0];
 
-        return ['claimed' => $worked['claimed'], 'pools' => $worked['pools'], 'failed' => $worked['failed']];
+        // Bounded, so a bug that kept claiming for ever ends the test instead of the runner's patience.
+        for ($pass = 0; $pass < max(1, (int) ($args['passes'] ?? 20)); $pass++) {
+            $worked = app(StockEventDrain::class)->drain($limit);
+            foreach (['claimed', 'pools', 'failed'] as $key) {
+                $totals[$key] += (int) $worked[$key];
+            }
+            if ((int) $worked['claimed'] === 0) {
+                break;
+            }
+        }
+
+        return $totals;
     }
 
     /** One of several different operations started at the same instant: the harness runs one name for all its processes, so this one is told which to run. @param array{operation: string, arguments: array<string, mixed>} $args */

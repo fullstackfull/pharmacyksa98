@@ -23,6 +23,8 @@ use App\Services\SalesChannels\Support\ChannelOperations;
  */
 trait BuildsOdooWorld
 {
+    use AssertsNoCredentialWasLogged;
+
     protected const ODOO_HOST = 'https://books.example.test';
 
     protected const ODOO_COMMON = self::ODOO_HOST . '/xmlrpc/2/common';
@@ -47,6 +49,11 @@ trait BuildsOdooWorld
     /** The Odoo tables are their own migration: nothing in the sales-channel module needs them. */
     protected function buildOdooSchema(): void
     {
+        // Odoo is where the credential leak was: `execute_kw` carries the API key as an unnamed POSITIONAL argument, which no
+        // key-based redactor can see. Guarded here as well as in the channel builder, because an accounting suite may build
+        // this world without building a channel one.
+        $this->guardAgainstLoggedCredentials();
+
         (require database_path('migrations/2026_11_15_100000_create_odoo_accounting_tables.php'))->up();
     }
 
